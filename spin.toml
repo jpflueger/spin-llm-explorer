@@ -1,0 +1,17 @@
+spin_manifest_version = "1"
+authors = ["Justin Pflueger <justin.pflueger@fermyon.com>"]
+description = ""
+name = "llm-explorer"
+trigger = { type = "http", base = "/" }
+version = "0.1.0"
+
+[[component]]
+id = "api"
+source = "api/target/wasm32-wasi/release/api.wasm"
+allowed_http_hosts = []
+[component.trigger]
+route = "/..."
+[component.build]
+command = "cargo build --target wasm32-wasi --release"
+workdir = "api"
+watch = ["src/**/*.rs", "Cargo.toml"]
