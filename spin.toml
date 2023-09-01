@@ -10,8 +10,18 @@ id = "api"
 source = "api/target/wasm32-wasi/release/api.wasm"
 allowed_http_hosts = []
 [component.trigger]
-route = "/..."
+route = "/api/..."
 [component.build]
 command = "cargo build --target wasm32-wasi --release"
 workdir = "api"
 watch = ["src/**/*.rs", "Cargo.toml"]
+
+[[component]]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.0.3/spin_static_fs.wasm", digest = "sha256:38bf971900228222f7f6b2ccee5051f399adca58d71692cdfdea98997965fd0d" }
+id = "web"
+files = [ { source = "web/dist", destination = "/" } ]
+[component.trigger]
+route = "/..."
+[component.build]
+command = "npm run build"
+workdir = "web"

@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "bradlc.vscode-tailwindcss",
+        "rust-lang.rust-analyzer",
+        "vue.volar",
+        "vue.vscode-typescript-vue-plugin",
+        "serayuzgur.crates",
+        "dbaeumer.vscode-eslint"
+    ]
+}
