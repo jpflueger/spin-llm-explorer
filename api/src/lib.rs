@@ -18,7 +18,8 @@ const DEFAULT_TOP_P: f32 = 0.9;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InferRequest {
     pub model: String,
-    pub prompt: String,
+    pub system_prompt: Option<String>,
+    pub user_prompt: String,
     pub options: Option<InferRequestOptions>,
 }
 
@@ -102,10 +103,16 @@ fn handle_api(req: Request) -> Result<Response> {
     };
     let options: spin_sdk::llm::InferencingParams = request.options.unwrap_or_default().into();
 
+    let prompt: String = if let Some(sys_prompt) = request.system_prompt {
+      format!("<<SYS>>{}<</SYS>>\n\n[INST]{}[/INST]", sys_prompt, request.user_prompt)
+    } else {
+      request.user_prompt
+    };
+
     // run the inference
     let inferred_result = spin_sdk::llm::infer_with_options(
         model,
-        &request.prompt,
+        &prompt,
         options,
     );
 
