@@ -25,3 +25,14 @@ route = "/..."
 [component.build]
 command = "npm run build"
 workdir = "web"
+
+[[component]]
+id = "app-api"
+source = "app-api/target/wasm32-wasi/release/app_api.wasm"
+allowed_http_hosts = []
+[component.trigger]
+route = "/api/app/..."
+[component.build]
+command = "cargo build --target wasm32-wasi --release"
+workdir = "app-api"
+watch = ["src/**/*.rs", "Cargo.toml"]
