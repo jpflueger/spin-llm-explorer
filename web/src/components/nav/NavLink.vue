@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 const props = withDefaults(defineProps<{
-  href: string;
+  href: RouteLocationRaw;
   activeClass?: string;
   inactiveClass?: string;
   ariaCurrentValue?: 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false';

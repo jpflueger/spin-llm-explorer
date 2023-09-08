@@ -14,6 +14,9 @@ import { NavBar, NavLink } from "@/components/nav";
         <NavLink href="/" active-class="bg-gray-900 text-white"
           inactive-class="text-gray-300 hover:bg-gray-700 hover:text-white"
           class="rounded-md px-3 py-2 text-sm font-medium">Home</NavLink>
+        <NavLink href="/apps" active-class="bg-gray-900 text-white"
+          inactive-class="text-gray-300 hover:bg-gray-700 hover:text-white"
+          class="rounded-md px-3 py-2 text-sm font-medium">Apps</NavLink>
         <NavLink href="/about" active-class="bg-gray-900 text-white"
           inactive-class="text-gray-300 hover:bg-gray-700 hover:text-white"
           class="rounded-md px-3 py-2 text-sm font-medium">About</NavLink>
@@ -23,4 +26,5 @@ import { NavBar, NavLink } from "@/components/nav";
     </template>
   </NavBar>
 
-<RouterView /></template>
+  <RouterView />
+</template>
