@@ -30,6 +30,7 @@ workdir = "web"
 id = "app-api"
 source = "app-api/target/wasm32-wasi/release/app_api.wasm"
 allowed_http_hosts = []
+sqlite_databases = ["default"]
 [component.trigger]
 route = "/api/app/..."
 [component.build]
