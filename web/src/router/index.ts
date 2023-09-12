@@ -23,9 +23,14 @@ const router = createRouter({
       component: () => import('../views/AppsView.vue'),
     },
     {
-      path: '/app/:name',
-      name: 'app',
-      component: () => import('../views/AppView.vue'),
+      path: '/apps/new',
+      name: 'app-new',
+      component: () => import('../views/AppForm.vue'),
+    },
+    {
+      path: '/apps/:name/edit',
+      name: 'app-edit',
+      component: () => import('../views/AppForm.vue'),
     }
   ],
 });

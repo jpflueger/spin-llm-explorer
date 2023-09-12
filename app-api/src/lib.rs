@@ -11,11 +11,11 @@ fn handle_app_api(req: Request) -> Result<Response> {
     // println!("{:?}", req.headers());
 
     let router = http_router! {
-        GET "/api/app" => api::list_apps,
-        GET "/api/app/:name" => api::get_app,
-        POST "/api/app" => api::create_app,
-        PUT "/api/app/:name" => api::update_app,
-        DELETE "/api/app/:name" => api::delete_app,
+        GET "/api/apps" => api::list_apps,
+        GET "/api/apps/:name" => api::get_app,
+        POST "/api/apps" => api::create_app,
+        PUT "/api/apps/:name" => api::update_app,
+        DELETE "/api/apps/:name" => api::delete_app,
         _ "/*" => |_req, _params| {
           Ok(http::Response::builder()
           .status(http::StatusCode::NOT_FOUND)
@@ -175,7 +175,7 @@ mod api {
         Ok(http::Response::builder()
             .status(http::StatusCode::CREATED)
             .header(http::header::CONTENT_TYPE, "application/json")
-            .header(http::header::LOCATION, format!("/api/app/{}", app.name))
+            .header(http::header::LOCATION, format!("/api/apps/{}", app.name))
             .body(Some(resp_body.into()))
             .unwrap())
     }

@@ -3,11 +3,11 @@
 set -euo pipefail
 
 echo "DELETE"
-curl -i -X DELETE http://127.0.0.1:3000/api/app/my-first-prompt-app
+curl -i -X DELETE http://127.0.0.1:3000/api/apps/my-first-prompt-app
 echo -e "\nexit: $?\n-------------------"
 
 echo "POST"
-curl -i -X POST http://127.0.0.1:3000/api/app \
+curl -i -X POST http://127.0.0.1:3000/api/apps \
 -H "Content-Type: application/json" \
 -d @- << EOF
 {
@@ -29,22 +29,22 @@ sleep 1
 echo -e "\nexit: $?\n-------------------"
 
 echo "GET(all)"
-curl -i http://127.0.0.1:3000/api/app
+curl -i http://127.0.0.1:3000/api/apps
 sleep 1
 echo -e "\nexit: $?\n-------------------"
 
 echo "GET(all)?offset=0&limit=1"
-curl -i http://127.0.0.1:3000/api/app?offset=0&limit=1
+curl -i http://127.0.0.1:3000/api/apps?offset=0&limit=1
 sleep 1
 echo -e "\nexit: $?\n-------------------"
 
 echo "GET(name)"
-curl -i http://127.0.0.1:3000/api/app/my-first-prompt-app
+curl -i http://127.0.0.1:3000/api/apps/my-first-prompt-app
 sleep 1
 echo -e "\nexit: $?\n-------------------"
 
 echo "PUT"
-curl -i -X PUT http://127.0.0.1:3000/api/app/my-first-prompt-app \
+curl -i -X PUT http://127.0.0.1:3000/api/apps/my-first-prompt-app \
 -H "Content-Type: application/json" \
 -d @- << EOF
 {

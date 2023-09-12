@@ -20,6 +20,7 @@ watch = ["src/**/*.rs", "Cargo.toml"]
 source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.0.3/spin_static_fs.wasm", digest = "sha256:38bf971900228222f7f6b2ccee5051f399adca58d71692cdfdea98997965fd0d" }
 id = "web"
 files = [ { source = "web/dist", destination = "/" } ]
+environment = { FALLBACK_PATH = "index.html" }
 [component.trigger]
 route = "/..."
 [component.build]
@@ -32,7 +33,7 @@ source = "app-api/target/wasm32-wasi/release/app_api.wasm"
 allowed_http_hosts = []
 sqlite_databases = ["default"]
 [component.trigger]
-route = "/api/app/..."
+route = "/api/apps/..."
 [component.build]
 command = "cargo build --target wasm32-wasi --release"
 workdir = "app-api"
