@@ -30,12 +30,6 @@ mod model {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize)]
-    pub struct Message {
-        pub role: String,
-        pub content: String,
-    }
-
-    #[derive(Debug, Serialize, Deserialize)]
     pub struct Model {
         pub name: String,
         pub max_tokens: u32,
@@ -48,12 +42,14 @@ mod model {
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct App {
-        pub id: u32,
+        #[serde(default)]
         pub created_at: String,
+        #[serde(default)]
         pub updated_at: String,
         pub name: String,
+        #[serde(default)]
         pub description: String,
-        pub messages: Vec<Message>,
+        pub system_prompt: String,
         pub model: Model,
     }
 
@@ -71,35 +67,15 @@ mod model {
         }
     }
 
-    impl Clone for Message {
-        fn clone(&self) -> Self {
-            Self {
-                role: self.role.clone(),
-                content: self.content.clone(),
-            }
-        }
-    }
-
     impl Clone for App {
         fn clone(&self) -> Self {
             Self {
-                id: self.id.clone(),
                 created_at: self.created_at.clone(),
                 updated_at: self.updated_at.clone(),
                 name: self.name.clone(),
                 description: self.description.clone(),
-                messages: self.messages.clone(),
+                system_prompt: self.system_prompt.clone(),
                 model: self.model.clone(),
-            }
-        }
-    }
-
-    impl Default for Message {
-        fn default() -> Self {
-            Self {
-                // TODO: set sensible defaults
-                role: Default::default(),
-                content: Default::default(),
             }
         }
     }
@@ -122,12 +98,11 @@ mod model {
     impl Default for App {
         fn default() -> Self {
             Self {
-                id: Default::default(),
                 created_at: Default::default(),
                 updated_at: Default::default(),
                 name: Default::default(),
                 description: Default::default(),
-                messages: vec![Default::default()],
+                system_prompt: Default::default(),
                 model: Default::default(),
             }
         }
@@ -151,7 +126,8 @@ mod api {
         let offset = list_query.offset.unwrap_or(0);
         let limit = list_query.limit.unwrap_or(10);
 
-        let apps = data::list(offset, limit)?;
+        let db = data::Db::new()?;
+        let apps = db.list(offset, limit)?;
 
         let body = serde_json::to_vec(&apps)?;
 
@@ -167,7 +143,8 @@ mod api {
             .get("name")
             .context("url route missing name parameter.")?;
 
-        let app = data::get_by_name(name.to_string())?;
+        let db = data::Db::new()?;
+        let app = db.get(name)?;
 
         let body = serde_json::to_vec(&app)?;
 
@@ -189,7 +166,9 @@ mod api {
 
         //TODO: make sure the name is not taken
 
-        let app = data::upsert(new_app)?;
+        let db = data::Db::new()?;
+        db.insert(&new_app)?;
+        let app = db.get(&new_app.name)?;
 
         let resp_body = serde_json::to_vec(&app)?;
 
@@ -210,9 +189,9 @@ mod api {
 
         //TODO: validate the data
 
-        //TODO: make sure the name is not taken
-
-        let app = data::upsert(new_app)?;
+        let db = data::Db::new()?;
+        db.update(&new_app)?;
+        let app = db.get(&new_app.name)?;
 
         let resp_body = serde_json::to_vec(&app)?;
 
@@ -228,7 +207,8 @@ mod api {
             .get("name")
             .context("url route missing name parameter.")?;
 
-        data::delete_by_name(name.to_string())?;
+        let db = data::Db::new()?;
+        db.delete(&name)?;
 
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
@@ -245,150 +225,201 @@ mod data {
     use super::model::*;
     use super::*;
 
-    pub fn list(offset: i64, limit: i64) -> Result<Vec<App>> {
-      let apps = select_apps(
-        "SELECT * FROM apps ORDER BY id DESC LIMIT ? OFFSET ?",
-        &[ValueParam::Integer(limit), ValueParam::Integer(offset)],
-      )?;
-
-      Ok(apps)
+    pub struct Db {
+        conn: Connection,
     }
 
-    pub fn get_by_name(name: String) -> Result<App> {
-        let apps = select_apps(
-            "SELECT * FROM apps WHERE name = ?",
-            &[ValueParam::Text(&name)],
-        )?;
-
-        if apps.len() == 0 {
-            return Err(anyhow::anyhow!("App not found"));
+    impl Db {
+        pub fn new() -> Result<Self> {
+            let conn = Connection::open_default()?;
+            Ok(Self { conn })
         }
 
-        // TODO: not sure how to handle this other than cloning?
-        Ok(apps[0].clone())
-    }
+        pub fn list(&self, offset: i64, limit: i64) -> Result<Vec<App>> {
+            let apps = self.select(
+                "SELECT * FROM apps ORDER BY name ASC LIMIT ? OFFSET ?",
+                &[ValueParam::Integer(limit), ValueParam::Integer(offset)],
+            )?;
 
-    pub fn upsert(app: App) -> Result<App> {
-        println!("data::upsert not implemented");
-        Ok(app)
-    }
+            Ok(apps)
+        }
 
-    pub fn delete_by_name(_name: String) -> Result<()> {
-        println!("data::delete_by_name not implemented");
-        Ok(())
-    }
+        pub fn get(&self, name: &str) -> Result<App> {
+            let apps = self.select(
+                "SELECT * FROM apps WHERE name = ?",
+                &[ValueParam::Text(&name)],
+            )?;
 
-    fn select_apps(query: &str, params: &[ValueParam]) -> Result<Vec<App>> {
-        let conn = Connection::open_default()?;
+            if apps.len() == 0 {
+                return Err(anyhow::anyhow!("App not found"));
+            }
 
-        let result = conn.execute(query, params)?;
+            // TODO: not sure how to handle this other than cloning?
+            Ok(apps[0].clone())
+        }
 
-        let col_map = get_column_lookup(&result.columns);
+        pub fn insert(&self, app: &App) -> Result<()> {
+            self.conn.execute(
+                "INSERT INTO apps (
+          name,
+          description,
+          system_prompt,
+          model_name,
+          model_max_tokens,
+          model_temperature,
+          model_repeat_penalty,
+          model_repeat_penalty_last_n_tokens,
+          model_top_k,
+          model_top_p
+        )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                &[
+                    ValueParam::Text(&app.name),
+                    ValueParam::Text(&app.description),
+                    ValueParam::Text(&app.system_prompt),
+                    ValueParam::Text(&app.model.name),
+                    ValueParam::Integer(app.model.max_tokens as i64),
+                    ValueParam::Real(app.model.temperature),
+                    ValueParam::Real(app.model.repeat_penalty),
+                    ValueParam::Integer(app.model.repeat_penalty_last_n_tokens as i64),
+                    ValueParam::Integer(app.model.top_k as i64),
+                    ValueParam::Real(app.model.top_p),
+                ],
+            )?;
 
-        Ok(result
-            .rows
-            .iter()
-            .flat_map(|r| -> Result<App, _> {
-                let id = r.get::<u32>(col_map["id"]).unwrap_or_default();
-                let created_at = r
-                    .get::<&str>(col_map["created_at"])
-                    .unwrap_or_default()
-                    .to_string();
-                let updated_at = r
-                    .get::<&str>(col_map["updated_at"])
-                    .unwrap_or_default()
-                    .to_string();
-                let name = r
-                    .get::<&str>(col_map["name"])
-                    .unwrap_or_default()
-                    .to_string();
-                let description = r
-                    .get::<&str>(col_map["description"])
-                    .unwrap_or_default()
-                    .to_string();
-                let model_name = r
-                    .get::<&str>(col_map["model_name"])
-                    .unwrap_or_default()
-                    .to_string();
-                let model_max_tokens = r
-                    .get::<u32>(col_map["model_max_tokens"])
-                    .unwrap_or_default();
-                let model_repeat_penalty_last_n_tokens = r
-                    .get::<u32>(col_map["model_repeat_penalty_last_n_tokens"])
-                    .unwrap_or_default();
-                let model_top_k = r.get::<u32>(col_map["model_top_k"]).unwrap_or_default();
+            Ok(())
+        }
 
-                //TODO: once the llm-sdk branch is caught up with main we can use the float conversions from the sdk
-                let model_temperature = match r
-                    .values
-                    .get(col_map["model_temperature"])
-                    .expect("missing expected column")
-                {
-                    ValueResult::Real(f) => *f,
-                    _ => 0.0,
-                };
-                let model_repeat_penalty = match r
-                    .values
-                    .get(col_map["model_repeat_penalty"])
-                    .expect("missing expected column")
-                {
-                    ValueResult::Real(f) => *f,
-                    _ => 0.0,
-                };
-                let model_top_p = match r
-                    .values
-                    .get(col_map["model_top_p"])
-                    .expect("missing expected column")
-                {
-                    ValueResult::Real(f) => *f,
-                    _ => 0.0,
-                };
+        pub fn update(&self, app: &App) -> Result<()> {
+            self.conn.execute(
+                "UPDATE apps SET
+        description = ?,
+        system_prompt = ?,
+        model_name = ?,
+        model_max_tokens = ?,
+        model_temperature = ?,
+        model_repeat_penalty = ?,
+        model_repeat_penalty_last_n_tokens = ?,
+        model_top_k = ?,
+        model_top_p = ?
+        WHERE name = ?",
+                &[
+                    ValueParam::Text(&app.description),
+                    ValueParam::Text(&app.system_prompt),
+                    ValueParam::Text(&app.model.name),
+                    ValueParam::Integer(app.model.max_tokens as i64),
+                    ValueParam::Real(app.model.temperature),
+                    ValueParam::Real(app.model.repeat_penalty),
+                    ValueParam::Integer(app.model.repeat_penalty_last_n_tokens as i64),
+                    ValueParam::Integer(app.model.top_k as i64),
+                    ValueParam::Real(app.model.top_p),
+                    ValueParam::Text(&app.name),
+                ],
+            )?;
+            Ok(())
+        }
 
-                let messages = get_app_messages(&conn, id)?;
+        pub fn delete(&self, name: &str) -> Result<()> {
+            self.conn.execute(
+                "DELETE FROM apps WHERE name = ?",
+                &[ValueParam::Text(&name)],
+            )?;
+            Ok(())
+        }
 
-                anyhow::Ok(App {
-                    id,
-                    created_at,
-                    updated_at,
-                    name,
-                    description,
-                    model: Model {
-                        name: model_name,
-                        max_tokens: model_max_tokens,
-                        temperature: model_temperature,
-                        repeat_penalty: model_repeat_penalty,
-                        repeat_penalty_last_n_tokens: model_repeat_penalty_last_n_tokens,
-                        top_k: model_top_k,
-                        top_p: model_top_p,
-                    },
-                    messages,
+        fn select(&self, query: &str, params: &[ValueParam]) -> Result<Vec<App>> {
+            let result = self.conn.execute(query, params)?;
+
+            let col_map = Self::get_column_lookup(&result.columns);
+
+            Ok(result
+                .rows
+                .iter()
+                .flat_map(|r| -> Result<App, _> {
+                    let created_at = r
+                        .get::<&str>(col_map["created_at"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let updated_at = r
+                        .get::<&str>(col_map["updated_at"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let name = r
+                        .get::<&str>(col_map["name"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let description = r
+                        .get::<&str>(col_map["description"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let system_prompt = r
+                        .get::<&str>(col_map["system_prompt"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let model_name = r
+                        .get::<&str>(col_map["model_name"])
+                        .unwrap_or_default()
+                        .to_string();
+                    let model_max_tokens = r
+                        .get::<u32>(col_map["model_max_tokens"])
+                        .unwrap_or_default();
+                    let model_repeat_penalty_last_n_tokens = r
+                        .get::<u32>(col_map["model_repeat_penalty_last_n_tokens"])
+                        .unwrap_or_default();
+                    let model_top_k = r.get::<u32>(col_map["model_top_k"]).unwrap_or_default();
+
+                    //TODO: once the llm-sdk branch is caught up with main we can use the float conversions from the sdk
+                    let model_temperature = match r
+                        .values
+                        .get(col_map["model_temperature"])
+                        .expect("missing expected column")
+                    {
+                        ValueResult::Real(f) => *f,
+                        _ => 0.0,
+                    };
+                    let model_repeat_penalty = match r
+                        .values
+                        .get(col_map["model_repeat_penalty"])
+                        .expect("missing expected column")
+                    {
+                        ValueResult::Real(f) => *f,
+                        _ => 0.0,
+                    };
+                    let model_top_p = match r
+                        .values
+                        .get(col_map["model_top_p"])
+                        .expect("missing expected column")
+                    {
+                        ValueResult::Real(f) => *f,
+                        _ => 0.0,
+                    };
+
+                    anyhow::Ok(App {
+                        created_at,
+                        updated_at,
+                        name,
+                        description,
+                        system_prompt: system_prompt,
+                        model: Model {
+                            name: model_name,
+                            max_tokens: model_max_tokens,
+                            temperature: model_temperature,
+                            repeat_penalty: model_repeat_penalty,
+                            repeat_penalty_last_n_tokens: model_repeat_penalty_last_n_tokens,
+                            top_k: model_top_k,
+                            top_p: model_top_p,
+                        },
+                    })
                 })
-            })
-            .collect())
-    }
+                .collect())
+        }
 
-    fn get_app_messages(conn: &Connection, app_id: u32) -> Result<Vec<Message>> {
-        let result = conn.execute(
-            "SELECT role, content FROM messages WHERE app_id = ?;",
-            &[ValueParam::Integer(app_id as i64)],
-        )?;
-
-        result
-            .rows()
-            .map(|r| {
-                Ok(Message {
-                    role: r.get::<&str>("role").unwrap_or_default().to_string(),
-                    content: r.get::<&str>("content").unwrap_or_default().to_string(),
-                })
-            })
-            .collect::<Result<Vec<Message>>>()
-    }
-
-    fn get_column_lookup<'a>(columns: &'a Vec<String>) -> HashMap<&'a str, usize> {
-        columns
-            .iter()
-            .enumerate()
-            .map(|(i, c)| (c.as_str(), i))
-            .collect::<HashMap<&str, usize>>()
+        fn get_column_lookup<'a>(columns: &'a Vec<String>) -> HashMap<&'a str, usize> {
+            columns
+                .iter()
+                .enumerate()
+                .map(|(i, c)| (c.as_str(), i))
+                .collect::<HashMap<&str, usize>>()
+        }
     }
 }

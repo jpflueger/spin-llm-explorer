@@ -1,13 +1,12 @@
-DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS apps;
 
 CREATE TABLE apps (
-    id INTEGER PRIMARY KEY,
-    created_at DATETIME,
-    updated_at DATETIME,
-    name TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     description TEXT,
-    model_name TEXT,
+    system_prompt TEXT,
+    model_name TEXT NOT NULL,
     model_max_tokens INTEGER,
     model_temperature REAL,
     model_repeat_penalty REAL,
@@ -16,18 +15,14 @@ CREATE TABLE apps (
     model_top_p REAL
 );
 
-CREATE TABLE messages (
-    id INTEGER PRIMARY KEY,
-    app_id INTEGER,
-    role TEXT,
-    content TEXT,
-    FOREIGN KEY (app_id) REFERENCES apps(id)
-);
+CREATE TRIGGER apps_update_updated_at_trigger
+AFTER UPDATE ON apps FOR EACH ROW
+WHEN OLD.updated_at = NEW.updated_at OR OLD.updated_at IS NULL
+BEGIN
+   UPDATE apps SET updated_at = CURRENT_TIMESTAMP WHERE name = NEW.name;
+END;
 
 INSERT INTO apps (
-    'id',
-    'created_at',
-    'updated_at',
     'name',
     'description',
     'model_name',
@@ -38,9 +33,6 @@ INSERT INTO apps (
     'model_top_k',
     'model_top_p'
 ) VALUES (
-    1,
-    '2021-08-31T18:00:00.000Z',
-    '2021-08-31T18:00:00.000Z',
     'my-first-prompt-app',
     'This is my first prompt app!',
     'llama2-chat',
@@ -50,28 +42,4 @@ INSERT INTO apps (
     64,
     40,
     0.9
-);
-
-INSERT INTO messages (
-    'id',
-    'app_id',
-    'role',
-    'content'
-) VALUES (
-    1,
-    1,
-    'system',
-    'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don''t know the answer to a question, please don''t share false information.'
-);
-
-INSERT INTO messages (
-    'id',
-    'app_id',
-    'role',
-    'content'
-) VALUES (
-    2,
-    1,
-    'user',
-    'What is the meaning of life?'
 );
