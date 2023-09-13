@@ -1,5 +1,5 @@
 [package]
-name = "app-api"
+name = "apps-api"
 authors = ["Justin Pflueger <justin.pflueger@fermyon.com>"]
 description = ""
 version = "0.1.0"
@@ -9,17 +9,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Useful crate to handle errors.
 anyhow = "1"
-# Crate to simplify working with bytes.
 bytes = "1"
-# General-purpose crate with common HTTP types.
 http = "0.2"
-# The Spin SDK.
 spin-sdk = { git = "https://github.com/fermyon/spin", branch = "llm-sdk" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = { version = "2", features = ["serde"] }
 serde_qs = "0.12.0"
-
-[workspace]
+shared = { path = "../shared" }

@@ -1,0 +1,12 @@
+[package]
+name = "shared"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+bytes = "1"
+http = "0.2"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
+spin-sdk = { git = "https://github.com/fermyon/spin", branch = "llm-sdk" }

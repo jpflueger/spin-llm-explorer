@@ -6,14 +6,26 @@ trigger = { type = "http", base = "/" }
 version = "0.1.0"
 
 [[component]]
-id = "api"
-source = "api/target/wasm32-wasi/release/api.wasm"
+id = "completions-api"
+source = "target/wasm32-wasi/release/completions_api.wasm"
 allowed_http_hosts = []
 [component.trigger]
-route = "/api/..."
+route = "/api/completions/..."
 [component.build]
-command = "cargo build --target wasm32-wasi --release"
-workdir = "api"
+command = "cargo build --release"
+workdir = "api/completions"
+watch = ["src/**/*.rs", "Cargo.toml"]
+
+[[component]]
+id = "apps-api"
+source = "target/wasm32-wasi/release/apps_api.wasm"
+allowed_http_hosts = []
+sqlite_databases = ["default"]
+[component.trigger]
+route = "/api/apps/..."
+[component.build]
+command = "cargo build --release"
+workdir = "api/apps"
 watch = ["src/**/*.rs", "Cargo.toml"]
 
 [[component]]
@@ -26,15 +38,3 @@ route = "/..."
 [component.build]
 command = "npm run build"
 workdir = "web"
-
-[[component]]
-id = "app-api"
-source = "app-api/target/wasm32-wasi/release/app_api.wasm"
-allowed_http_hosts = []
-sqlite_databases = ["default"]
-[component.trigger]
-route = "/api/apps/..."
-[component.build]
-command = "cargo build --target wasm32-wasi --release"
-workdir = "app-api"
-watch = ["src/**/*.rs", "Cargo.toml"]
