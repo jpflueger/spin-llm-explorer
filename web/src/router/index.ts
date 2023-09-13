@@ -31,6 +31,11 @@ const router = createRouter({
       path: '/apps/:name/edit',
       name: 'app-edit',
       component: () => import('../views/AppForm.vue'),
+    },
+    {
+      path: '/apps/:name',
+      name: 'app-home',
+      component: () => import('../views/AppHome.vue'),
     }
   ],
 });
