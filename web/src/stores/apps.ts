@@ -1,6 +1,7 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import api from '@/utils/api';
+import { useCompletionsStore } from './completions';
 
 const defaultApp = {
   name: "",
@@ -22,6 +23,14 @@ export const useAppsStore = defineStore('apps', () => {
   const error = ref<string | null>(null);
   const apps = ref<App[]>([]);
   const app = ref<App>(defaultApp);
+
+  const appCompletions = computed(() => {
+    const completionsStore = useCompletionsStore();
+
+    return completionsStore
+      .completions
+      .filter(c => c.app_name === app.value.name);
+  });
 
   async function callApi(fn: () => Promise<void>) {
     loading.value = true;
@@ -52,5 +61,23 @@ export const useAppsStore = defineStore('apps', () => {
   });
   const resetApp = () => app.value = defaultApp;
 
-  return { loading, error, apps, app, fetchApps, fetchApp, createApp, updateApp, deleteApp, resetApp };
+  const createCompletion = (prompt: string) => callApi(async () => {
+    const { createCompletion: inner } = useCompletionsStore();
+    await inner(app.value, prompt);
+  });
+
+  return {
+    loading,
+    error,
+    apps,
+    app,
+    appCompletions,
+    fetchApps,
+    fetchApp,
+    createApp,
+    updateApp,
+    deleteApp,
+    resetApp,
+    createCompletion,
+  };
 });

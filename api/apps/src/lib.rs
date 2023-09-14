@@ -16,6 +16,12 @@ fn handle_app_api(req: Request) -> Result<Response> {
         POST "/api/apps" => api::create_app,
         PUT "/api/apps/:name" => api::update_app,
         DELETE "/api/apps/:name" => api::delete_app,
+        POST "/api/apps/:name/completions" => |_req, _params| {
+          Ok(http::Response::builder()
+          .status(http::StatusCode::NOT_IMPLEMENTED)
+          .body(Some("Not implemented".into()))
+          .unwrap())
+        },
         _ "/*" => |_req, _params| {
           Ok(http::Response::builder()
           .status(http::StatusCode::NOT_FOUND)

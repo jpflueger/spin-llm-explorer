@@ -15,4 +15,19 @@ declare global {
       top_p: number;
     }
   }
+
+  interface CompletionMessage {
+    role: string;
+    content: string;
+  }
+
+  interface CompletionUsage {
+    prompt_token_count: number;
+    generated_token_count: number;
+  }
+
+  interface Completion {
+    messages: CompletionMessage[];
+    usage: CompletionUsage | null;
+  }
 }

@@ -9,8 +9,9 @@ version = "0.1.0"
 id = "completions-api"
 source = "target/wasm32-wasi/release/completions_api.wasm"
 allowed_http_hosts = []
+ai_models = ["llama2-chat", "codellama-instruct"]
 [component.trigger]
-route = "/api/completions/..."
+route = "/api/..."
 [component.build]
 command = "cargo build --release"
 workdir = "api/completions"

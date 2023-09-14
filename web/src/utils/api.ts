@@ -38,10 +38,38 @@ async function deleteApp(name: string): Promise<void> {
   });
 }
 
+function createCompletion(app: App, prompt: string): Promise<Completion> {
+  return fetch(`${baseUrl}/api/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [{
+        role: 'system',
+        content: app.system_prompt,
+      }, {
+        role: 'user',
+        content: prompt,
+        }],
+      model: app.model.name,
+      params: {
+        max_tokens: app.model.max_tokens,
+        temperature: app.model.temperature,
+        repeat_penalty: app.model.repeat_penalty,
+        repeat_penalty_last_n_tokens: app.model.repeat_penalty_last_n_tokens,
+        top_k: app.model.top_k,
+        top_p: app.model.top_p,
+      },
+     }),
+  }).then(response => response.json());
+}
+
 export default {
   fetchApps,
   fetchApp,
   createApp,
   updateApp,
   deleteApp,
+  createCompletion,
 };
