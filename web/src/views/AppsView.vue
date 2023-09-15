@@ -3,9 +3,15 @@ import { NavLink } from "@/components/nav";
 import { onMounted } from "vue";
 import { useAppsStore } from "@/stores/apps";
 import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
 const { apps } = storeToRefs(useAppsStore());
 const { fetchApps } = useAppsStore();
+
+const navAppHome = (name: string) => {
+  router.push({ name: 'app-home', params: { name }});
+};
 
 onMounted(() => {
   fetchApps();
@@ -22,18 +28,12 @@ onMounted(() => {
           New App</NavLink>
       </div>
       <ul role="list" class="divide-y divide-gray-100">
-        <li v-for="app in apps" :key="app.name" class="flex justify-between gap-x-6 py-5">
+        <li v-for="app in apps" :key="app.name" class="flex justify-between gap-x-6 py-5 px-2.5 mt-3 rounded-md cursor-pointer hover:bg-gray-200" @click="navAppHome(app.name)">
           <div class="flex min-w-0 gap-x-4">
-            <!-- <img class="h-12 w-12 flex-none rounded-full bg-gray-50" :src="person.imageUrl" alt="" /> -->
             <div class="min-w-0 flex-auto">
               <p class="text-sm font-semibold leading-6 text-gray-900">{{ app.name }}</p>
               <p class="mt-1 truncate text-xs leading-5 text-gray-500">{{ app.model.name }}</p>
             </div>
-          </div>
-          <div class="shrink-0 sm:flex sm:flex-col sm:items-end">
-            <NavLink :href="{ name: 'app-edit', params: { name: app.name } }"
-              class="text-sm font-semibold leading-6 text-gray-900">
-              View</NavLink>
           </div>
         </li>
       </ul>

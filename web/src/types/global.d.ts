@@ -2,6 +2,8 @@ export { }
 
 declare global {
   interface App {
+    created_at: string;
+    updated_at: string;
     name: string;
     description: string;
     system_prompt: string;
@@ -29,5 +31,12 @@ declare global {
   interface Completion {
     messages: CompletionMessage[];
     usage: CompletionUsage | null;
+  }
+
+  interface AppCompletion {
+    created_at: string;
+    user_prompt: string;
+    app_snapshot: App;
+    completion: Completion;
   }
 }

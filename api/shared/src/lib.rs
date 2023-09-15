@@ -57,7 +57,7 @@ impl GenerationResponseBuilder {
   pub fn build(self) -> Result<Response> {
     let response = GenerationResponse {
       messages: vec![GenerationMessage {
-        role: "system".to_string(),
+        role: "assistant".to_string(),
         content: self.res.text,
       }],
       usage: GenerationUsage {

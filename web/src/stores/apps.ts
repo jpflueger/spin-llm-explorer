@@ -4,6 +4,8 @@ import api from '@/utils/api';
 import { useCompletionsStore } from './completions';
 
 const defaultApp = {
+  created_at: "",
+  updated_at: "",
   name: "",
   description: "",
   system_prompt: "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.\n\nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.",
@@ -26,10 +28,12 @@ export const useAppsStore = defineStore('apps', () => {
 
   const appCompletions = computed(() => {
     const completionsStore = useCompletionsStore();
-
-    return completionsStore
-      .completions
-      .filter(c => c.app_name === app.value.name);
+    if (completionsStore.completions instanceof Map) {
+      return completionsStore
+        .completions
+        .get(app.value.name) || [];
+    }
+    return [];
   });
 
   async function callApi(fn: () => Promise<void>) {
