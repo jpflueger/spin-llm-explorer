@@ -1,7 +1,7 @@
 spin_manifest_version = "1"
 authors = ["Justin Pflueger <justin.pflueger@fermyon.com>"]
 description = ""
-name = "llm-explorer"
+name = "prompts"
 trigger = { type = "http", base = "/" }
 version = "0.1.0"
 

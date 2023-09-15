@@ -7,6 +7,10 @@ export const useCompletionsStore = defineStore('completions', () => {
   const error = ref<string | null>(null);
   const completions = ref(new Map<string, AppCompletion[]>());
 
+  const clearCompletions = (appName: string): void => {
+    completions.value.set(appName, []);
+  };
+
   const createCompletion = async (app: App, prompt: string): Promise<void> => {
     loading.value = true;
     try {
@@ -32,7 +36,7 @@ export const useCompletionsStore = defineStore('completions', () => {
     }
   };
 
-  return { loading, error, completions, createCompletion };
+  return { loading, error, completions, createCompletion, clearCompletions };
 }, {
   persist: {
     debug: true,

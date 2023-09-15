@@ -70,6 +70,11 @@ export const useAppsStore = defineStore('apps', () => {
     await inner(app.value, prompt);
   });
 
+  const clearCompletions = () => {
+    const { clearCompletions: inner } = useCompletionsStore();
+    inner(app.value.name);
+  };
+
   return {
     loading,
     error,
@@ -83,5 +88,6 @@ export const useAppsStore = defineStore('apps', () => {
     deleteApp,
     resetApp,
     createCompletion,
+    clearCompletions,
   };
 });

@@ -34,5 +34,9 @@ fn handle_completion(http_req: Request, _params: Params) -> Result<Response> {
 
   let infer_result = spin_sdk::llm::infer_with_options(model, &prompt, params)?;
 
+  println!("{}, Formatted prompt: {:?}",
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+    prompt);
+
   GenerationResponseBuilder::new(infer_result).build()
 }
