@@ -1,5 +1,5 @@
 use anyhow::Result;
-use shared::{GenerationRequest, GenerationResponseBuilder, InferSdkBuilder, llama2_prompt::Llama2PromptBuilder};
+use shared::{model::CompletionRequest, CompletionChain, KvModelOptionsDefaults};
 use spin_sdk::{
     http::{Params, Request, Response, Router},
     http_component,
@@ -19,24 +19,24 @@ fn handle(req: Request) -> Result<Response> {
 
 fn handle_completion(http_req: Request, _params: Params) -> Result<Response> {
   // parse the request
-  let api_req = GenerationRequest::try_from(http_req)?;
+  let cmpl_req = CompletionRequest::try_from(http_req)?;
 
-  let sdk_bldr = InferSdkBuilder::new()
-    .with_model(api_req.model)
-    .with_messages(api_req.messages)
-    .with_params(api_req.params)
-    //TODO: should be able to select this based on the model but I just want to get this done
-    .with_prompt_builder(Box::new(Llama2PromptBuilder {}));
+  // build the chain
+  let chain = {
+    let mut chain = CompletionChain::new();
+    chain.with_options(KvModelOptionsDefaults::new(false));
+    //TODO: load history from sqlite
+    //TODO: add example of context from vss
+    chain
+  };
 
-  let model = sdk_bldr.build_model()?;
-  let prompt = sdk_bldr.build_prompt()?;
-  let params = sdk_bldr.build_params();
+  // execute the chain
+  let cmpl_res = chain.exec(&cmpl_req)?;
 
-  let infer_result = spin_sdk::llm::infer_with_options(model, &prompt, params)?;
-
-  println!("{}, Formatted prompt: {:?}",
-    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-    prompt);
-
-  GenerationResponseBuilder::new(infer_result).build()
+  //convert into a response
+  let body = cmpl_res.try_into()?;
+  let http_res = http::Response::builder()
+    .status(200)
+    .body(Some(body))?;
+  Ok(http_res)
 }

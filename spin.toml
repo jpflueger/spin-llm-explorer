@@ -10,6 +10,8 @@ id = "completions-api"
 source = "target/wasm32-wasi/release/completions_api.wasm"
 allowed_http_hosts = []
 ai_models = ["llama2-chat", "codellama-instruct"]
+key_value_stores = ["default"]
+sqlite_databases = ["default"]
 [component.trigger]
 route = "/api/..."
 [component.build]
