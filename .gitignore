@@ -2,3 +2,4 @@ main.wasm
 .spin/
 .DS_Store
 target/
+.local/
